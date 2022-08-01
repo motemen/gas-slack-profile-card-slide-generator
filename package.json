@@ -1,0 +1,25 @@
+{
+  "name": "gas-slack-profile-card-slide-generator",
+  "version": "1.0.0",
+  "main": "index.js",
+  "author": "Hironao OTSUBO <motemen@gmail.com>",
+  "license": "MIT",
+  "private": true,
+  "devDependencies": {
+    "@google/clasp": "^2.4.1",
+    "@tsconfig/recommended": "^1.0.1",
+    "@types/google-apps-script": "^1.0.53",
+    "@types/google-apps-script-oauth2": "^38.0.0",
+    "@types/vhtml": "^2.2.4",
+    "esbuild": "^0.14.51",
+    "vite-plugin-singlefile": "^0.11.0"
+  },
+  "scripts": {
+    "build": "esbuild --bundle src/app.tsx --outdir=dist",
+    "push": "clasp push"
+  },
+  "dependencies": {
+    "htm": "^3.1.1",
+    "vhtml": "^2.2.0"
+  }
+}
