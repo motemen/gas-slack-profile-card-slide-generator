@@ -7,19 +7,29 @@
   "private": true,
   "devDependencies": {
     "@google/clasp": "^2.4.1",
-    "@tsconfig/recommended": "^1.0.1",
+    "@tsconfig/vite-react": "^1.0.0",
     "@types/google-apps-script": "^1.0.53",
     "@types/google-apps-script-oauth2": "^38.0.0",
+    "@types/react": "^18.0.15",
+    "@types/react-dom": "^18.0.6",
     "@types/vhtml": "^2.2.4",
+    "@vitejs/plugin-react": "^2.0.0",
     "esbuild": "^0.14.51",
-    "vite-plugin-singlefile": "^0.11.0"
+    "vite": "^3.0.4",
+    "vite-plugin-singlefile": "^0.11.0",
+    "vite-plugin-static-copy": "^0.7.0"
   },
   "scripts": {
     "build": "esbuild --bundle src/app.tsx --outdir=dist",
     "push": "clasp push"
   },
   "dependencies": {
-    "htm": "^3.1.1",
-    "vhtml": "^2.2.0"
+    "@emotion/react": "^11.10.0",
+    "@emotion/styled": "^11.10.0",
+    "@mui/material": "^5.9.3",
+    "gas-client": "^1.0.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "swr": "^1.3.0"
   }
 }

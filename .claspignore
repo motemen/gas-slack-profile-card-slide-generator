@@ -1,3 +1,5 @@
 **/**
 !appsscript.json
 !dist/*.js
+!dist/*.ts
+!dist/*.html
