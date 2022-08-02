@@ -4,7 +4,7 @@ import h from "vhtml";
 const Fragment = ({ children }: { children: string[] }) =>
   h(null as any, null, ...children);
 
-const { SLACK_CLIENT_ID, SLACK_CLIENT_SECRET } =
+const { SLACK_CLIENT_ID, SLACK_CLIENT_SECRET, TEMPLATE_SLIDE_ID } =
   PropertiesService.getScriptProperties().getProperties();
 
 declare var globalThis: {
@@ -45,6 +45,10 @@ function doGet(
   ev: GoogleAppsScript.Events.DoGet
 ): GoogleAppsScript.HTML.HtmlOutput {
   const slackService = buildSlackOAuthService();
+
+  if (ev.parameter.mode === "manifest") {
+    return doShowManifest();
+  }
 
   if (ev.parameter.mode === "logout") {
     slackService.reset();
@@ -116,6 +120,30 @@ function doGet(
   );
 
   return HtmlService.createHtmlOutput(`<!DOCTYPE html>${indexHTML}`);
+}
+
+function doShowManifest() {
+  const slackService = buildSlackOAuthService();
+  const manifest = {
+    display_information: {
+      name: "Slack Profile Card Slide Generator",
+    },
+    oauth_config: {
+      redirect_urls: [slackService.getRedirectUri()],
+      scopes: {
+        user: ["users.profile:read"],
+      },
+    },
+    settings: {
+      org_deploy_enabled: false,
+      socket_mode_enabled: false,
+      token_rotation_enabled: false,
+    },
+  };
+
+  return HtmlService.createHtmlOutput(
+    `<textarea readonly>${JSON.stringify(manifest, null, 2)}</textarea>`
+  );
 }
 
 function createSlide(
