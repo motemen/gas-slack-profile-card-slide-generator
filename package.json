@@ -7,6 +7,7 @@
   "private": true,
   "devDependencies": {
     "@google/clasp": "^2.4.1",
+    "@slack/web-api": "^6.7.2",
     "@tsconfig/vite-react": "^1.0.0",
     "@types/google-apps-script": "^1.0.53",
     "@types/google-apps-script-oauth2": "^38.0.0",
@@ -15,12 +16,15 @@
     "@types/vhtml": "^2.2.4",
     "@vitejs/plugin-react": "^2.0.0",
     "esbuild": "^0.14.51",
+    "npm-run-all": "^4.1.5",
     "vite": "^3.0.4",
     "vite-plugin-singlefile": "^0.11.0",
     "vite-plugin-static-copy": "^0.7.0"
   },
   "scripts": {
-    "build": "esbuild --bundle src/app.tsx --outdir=dist",
+    "build": "run-p build:*",
+    "build:server": "mkdir -p dist && cp src/server.ts dist/",
+    "build:client": "vite build",
     "push": "clasp push"
   },
   "dependencies": {

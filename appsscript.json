@@ -20,6 +20,6 @@
   "runtimeVersion": "V8",
   "webapp": {
     "executeAs": "USER_ACCESSING",
-    "access": "MYSELF"
+    "access": "ANYONE"
   }
 }

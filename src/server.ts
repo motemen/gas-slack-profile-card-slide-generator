@@ -22,7 +22,7 @@ export function getMe(): GetMeResponse {
 
   const userProfile = requestSlackAPI<SlackUserProfileResponse>(
     slackService,
-    "https://slack.com/api/users.profile.get"
+    "users.profile.get"
   );
   return {
     isAuthorized: true,
@@ -37,10 +37,10 @@ export function logout() {
 
 function requestSlackAPI<T>(
   slackService: GoogleAppsScriptOAuth2.OAuth2Service,
-  url: string,
+  method: string,
   params?: GoogleAppsScript.URL_Fetch.URLFetchRequestOptions
 ): T {
-  const resp = UrlFetchApp.fetch(url, {
+  const resp = UrlFetchApp.fetch(`https://slack.com/api/${method}`, {
     headers: {
       Authorization: `Bearer ${slackService.getAccessToken()}`,
     },
@@ -61,7 +61,9 @@ interface SlackUserProfileResponse {
   profile: SlackUserProfile;
 }
 
-function doGet(): GoogleAppsScript.HTML.HtmlOutput {
+interface SlackTeamProfile {}
+
+export function doGet(): GoogleAppsScript.HTML.HtmlOutput {
   return HtmlService.createHtmlOutputFromFile("dist/index.html").setTitle(
     "Slack Profile Card Generator"
   );
@@ -97,9 +99,7 @@ export function createSlide() {
 
   const userProfile = me.profile;
 
-  const originalSlide = DriveApp.getFileById(
-    "1jwKNAl-MaMhfRSufmoTT3VX1g5Q-_q-EGkCszQo74Xc"
-  );
+  const originalSlide = DriveApp.getFileById(TEMPLATE_SLIDE_ID);
   const slide = originalSlide.makeCopy();
   const slideId = slide.getId();
   const requests: GoogleAppsScript.Slides.Schema.Request[] = [
