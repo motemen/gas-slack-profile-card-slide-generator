@@ -1,32 +1,53 @@
+import {
+  type UsersProfileGetResponse,
+  type TeamProfileGetResponse,
+} from "@slack/web-api";
+
 const { SLACK_CLIENT_ID, SLACK_CLIENT_SECRET, TEMPLATE_SLIDE_ID } =
   PropertiesService.getScriptProperties().getProperties();
 
 type GetMeResponse =
+  | { error: string }
   | {
-      isAuthorized: false;
-      authorizationURL: string;
-    }
-  | {
-      isAuthorized: true;
-      profile: SlackUserProfile;
+      templateSlideURL: string;
+      me:
+        | {
+            isAuthorized: false;
+            authorizationURL: string;
+          }
+        | {
+            isAuthorized: true;
+            profile: NonNullable<UsersProfileGetResponse["profile"]>;
+          };
     };
 
 export function getMe(): GetMeResponse {
+  if (!TEMPLATE_SLIDE_ID) {
+    return { error: "Configuration error: TEMPLATE_SLIDE_ID is not set" };
+  }
+
+  const templateSlideURL = `https://docs.google.com/presentation/d/${TEMPLATE_SLIDE_ID}/edit`;
   const slackService = buildSlackOAuthService();
   if (slackService.hasAccess() === false) {
     return {
-      isAuthorized: false,
-      authorizationURL: slackService.getAuthorizationUrl(),
+      templateSlideURL,
+      me: {
+        isAuthorized: false,
+        authorizationURL: slackService.getAuthorizationUrl(),
+      },
     };
   }
 
-  const userProfile = requestSlackAPI<SlackUserProfileResponse>(
+  const userProfile = requestSlackAPI<UsersProfileGetResponse>(
     slackService,
     "users.profile.get"
   );
   return {
-    isAuthorized: true,
-    profile: userProfile?.profile,
+    templateSlideURL,
+    me: {
+      isAuthorized: true,
+      profile: userProfile.profile!,
+    },
   };
 }
 
@@ -47,21 +68,6 @@ function requestSlackAPI<T>(
   });
   return JSON.parse(resp.getContentText()) as unknown as T;
 }
-
-interface SlackUserProfile {
-  display_name: string;
-  real_name: string;
-  title: string;
-  image_512: string;
-  image_192: string;
-  image_72: string;
-}
-
-interface SlackUserProfileResponse {
-  profile: SlackUserProfile;
-}
-
-interface SlackTeamProfile {}
 
 export function doGet(): GoogleAppsScript.HTML.HtmlOutput {
   return HtmlService.createHtmlOutputFromFile("dist/index.html").setTitle(
@@ -91,13 +97,32 @@ export function getAppManifest(): string {
   return JSON.stringify(manifest, null, 2);
 }
 
-export function createSlide() {
-  const me = getMe();
-  if (me.isAuthorized === false) {
+export function createCard() {
+  const slackService = buildSlackOAuthService();
+  if (slackService.hasAccess() === false) {
     throw new Error("Not authorized");
   }
 
-  const userProfile = me.profile;
+  const usersProfile = requestSlackAPI<UsersProfileGetResponse>(
+    slackService,
+    "users.profile.get"
+  );
+  if (!usersProfile.ok || !usersProfile.profile) {
+    throw new Error(`users.profile.get: ${usersProfile.error}`);
+  }
+
+  const teamProfile = requestSlackAPI<TeamProfileGetResponse>(
+    buildSlackOAuthService(),
+    "team.profile.get"
+  );
+  if (!teamProfile.ok) {
+    throw new Error(`team.profile.get: ${teamProfile.error}`);
+  }
+
+  const profile = usersProfile.profile;
+
+  Logger.log("usersProfile", profile);
+  Logger.log("teamProfile", teamProfile.profile);
 
   const originalSlide = DriveApp.getFileById(TEMPLATE_SLIDE_ID);
   const slide = originalSlide.makeCopy();
@@ -106,23 +131,33 @@ export function createSlide() {
     {
       replaceAllText: {
         containsText: { text: "{{name}}" },
-        replaceText: userProfile.display_name || userProfile.real_name,
+        replaceText: profile.display_name || profile.real_name,
       },
     },
     {
       replaceAllText: {
         containsText: { text: "{{title}}" },
-        replaceText: userProfile.title,
+        replaceText: profile.title,
       },
     },
     // TODO: make failable
     {
       replaceAllShapesWithImage: {
         containsText: { text: "{{image}}" },
-        imageUrl: userProfile.image_512 || userProfile.image_192,
+        imageUrl: profile.image_512 || profile.image_192,
       },
     },
   ];
+
+  teamProfile.profile?.fields?.forEach((field) => {
+    requests.push({
+      replaceAllText: {
+        containsText: { text: "{{" + field.label + "}}" },
+        replaceText: profile.fields?.[field.id!]?.value ?? "",
+      },
+    });
+  });
+
   Slides.Presentations!.batchUpdate({ requests }, slideId);
 
   Logger.log(slide.getUrl());
@@ -149,11 +184,11 @@ function authCallback(request: object) {
   const isAuthorized = slackService.handleCallback(request);
   if (isAuthorized) {
     return HtmlService.createHtmlOutput(
-      `Authorized. <a href="${ScriptApp.getService().getUrl()}">Back to app</a>`
+      `Authorized. <script>window.top.opener.__authorizedCallback()</script><a href="javascript:window.top.close()">Close</a>`
     );
   } else {
     return HtmlService.createHtmlOutput(
-      `Failed to aurhorize. <a href="${ScriptApp.getService().getUrl()}">Back to app</a>`
+      `Failed to aurhorize. <a href="javascript:window.top.close()">Close</a>`
     );
   }
 }
