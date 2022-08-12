@@ -97,7 +97,44 @@ export function getAppManifest(): string {
   return JSON.stringify(manifest, null, 2);
 }
 
-export function createCard() {
+type TemplateVariableExample =
+  | {
+      type: "text";
+      from: string;
+      to: string;
+    }
+  | {
+      type: "image";
+      from: string;
+      to: string;
+    };
+
+export function getTemplateVariableExamples(): TemplateVariableExample[] {
+  const requests = getSlideUpdateRequets();
+  return requests
+    .map((req) => {
+      if (req.replaceAllText) {
+        return {
+          type: "text",
+          from: req.replaceAllText.containsText!.text,
+          to: req.replaceAllText.replaceText,
+        };
+      }
+
+      if (req.replaceAllShapesWithImage) {
+        return {
+          type: "image",
+          from: req.replaceAllShapesWithImage.containsText!.text,
+          to: req.replaceAllShapesWithImage.imageUrl,
+        };
+      }
+
+      return null;
+    })
+    .filter((v): v is TemplateVariableExample => !!v);
+}
+
+function getSlideUpdateRequets(): GoogleAppsScript.Slides.Schema.Request[] {
   const slackService = buildSlackOAuthService();
   if (slackService.hasAccess() === false) {
     throw new Error("Not authorized");
@@ -124,14 +161,23 @@ export function createCard() {
   Logger.log("usersProfile", profile);
   Logger.log("teamProfile", teamProfile.profile);
 
-  const originalSlide = DriveApp.getFileById(TEMPLATE_SLIDE_ID);
-  const slide = originalSlide.makeCopy();
-  const slideId = slide.getId();
   const requests: GoogleAppsScript.Slides.Schema.Request[] = [
     {
       replaceAllText: {
         containsText: { text: "{{name}}" },
         replaceText: profile.display_name || profile.real_name,
+      },
+    },
+    {
+      replaceAllText: {
+        containsText: { text: "{{real_name}}" },
+        replaceText: profile.real_name,
+      },
+    },
+    {
+      replaceAllText: {
+        containsText: { text: "{{display_name}}" },
+        replaceText: profile.display_name,
       },
     },
     {
@@ -157,6 +203,16 @@ export function createCard() {
       },
     });
   });
+
+  return requests;
+}
+
+export function createCard() {
+  const originalSlide = DriveApp.getFileById(TEMPLATE_SLIDE_ID);
+  const slide = originalSlide.makeCopy();
+  const slideId = slide.getId();
+
+  const requests = getSlideUpdateRequets();
 
   Slides.Presentations!.batchUpdate({ requests }, slideId);
 

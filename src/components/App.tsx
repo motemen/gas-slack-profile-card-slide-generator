@@ -9,6 +9,7 @@ import {
   Stack,
   Alert,
   ButtonProps,
+  Table,
 } from "react-bootstrap";
 import useSWRImmutable from "swr/immutable";
 import { GASClient } from "gas-client";
@@ -46,18 +47,78 @@ const LoadingButton = (
   );
 };
 
+interface DialogProps {
+  shown: boolean;
+  onHide: () => void;
+}
+
+const ManifestDialog = ({ shown, onHide }: DialogProps) => {
+  const { data: manifest } = useSWRImmutable(shown && "getAppManifest", () =>
+    remote.getAppManifest()
+  );
+
+  return (
+    <Modal show={shown} onHide={onHide}>
+      <Modal.Header closeButton>Slack App Manifest</Modal.Header>
+      <Modal.Body>
+        {manifest ? (
+          <pre>{manifest}</pre>
+        ) : (
+          <Spinner animation="border" variant="secondary"></Spinner>
+        )}
+      </Modal.Body>
+    </Modal>
+  );
+};
+
+const TemplateVariableExamplesDialog = ({ shown, onHide }: DialogProps) => {
+  const { data: examples } = useSWRImmutable(
+    shown && "getTemplateVariableExamples",
+    () => remote.getTemplateVariableExamples()
+  );
+
+  return (
+    <Modal show={shown} onHide={onHide} size="lg">
+      <Modal.Header closeButton>Template Variable Examples</Modal.Header>
+      <Modal.Body>
+        {examples ? (
+          <Table striped bordered hover>
+            <tbody>
+              <thead>
+                <tr>
+                  <th>Type</th>
+                  <th>From</th>
+                  <th>To</th>
+                </tr>
+              </thead>
+              {examples.map((ex, i) => (
+                <tr key={i}>
+                  <td>{ex.type}</td>
+                  <td>{ex.from}</td>
+                  <td>{ex.to}</td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+        ) : (
+          <Spinner animation="border" variant="secondary"></Spinner>
+        )}
+      </Modal.Body>
+    </Modal>
+  );
+};
+
 const App = () => {
   const getMe = useSWRImmutable("me", remote.getMe);
 
   const [errorMessage, setErrorMessage] = useState<string>();
-  const [slideURL, setSlideURL] = useState<string>();
-  const [manifest, setManifest] = useState<string>();
-  const [manifestModalShown, setManifestModalShown] = useState<boolean>(false);
 
-  const showManifest = async () => {
-    setManifestModalShown(true);
-    setManifest(await remote.getAppManifest());
-  };
+  const [manifestDialogShown, setManifestDialogShown] =
+    useState<boolean>(false);
+  const [examplesDialogShown, setExamplesDialogShown] =
+    useState<boolean>(false);
+
+  const [slideURL, setSlideURL] = useState<string>();
 
   if (getMe.error) {
     setErrorMessage(`getMe: ${getMe.error}`);
@@ -178,7 +239,20 @@ const App = () => {
             <Nav.Item>
               <Button
                 variant="link"
-                onClick={showManifest}
+                onClick={() => {
+                  setExamplesDialogShown(true);
+                }}
+                className="nav-link"
+              >
+                🔧 Template Variables
+              </Button>
+            </Nav.Item>
+            <Nav.Item>
+              <Button
+                variant="link"
+                onClick={() => {
+                  setManifestDialogShown(true);
+                }}
                 className="nav-link"
               >
                 🔧 Slack app manifest
@@ -198,19 +272,14 @@ const App = () => {
           <AppMain></AppMain>
         </Stack>
       </Container>
-      <Modal
-        show={manifestModalShown}
-        onHide={() => setManifestModalShown(false)}
-      >
-        <Modal.Header closeButton>Slack App Manifest</Modal.Header>
-        <Modal.Body>
-          {manifest ? (
-            <pre>{manifest}</pre>
-          ) : (
-            <Spinner animation="border" variant="secondary"></Spinner>
-          )}
-        </Modal.Body>
-      </Modal>
+      <ManifestDialog
+        shown={manifestDialogShown}
+        onHide={() => setManifestDialogShown(false)}
+      />
+      <TemplateVariableExamplesDialog
+        shown={examplesDialogShown}
+        onHide={() => setExamplesDialogShown(false)}
+      />
     </>
   );
 };

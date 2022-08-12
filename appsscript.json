@@ -16,10 +16,15 @@
       }
     ]
   },
+  "oauthScopes": [
+    "https://www.googleapis.com/auth/drive",
+    "https://www.googleapis.com/auth/script.external_request",
+    "https://www.googleapis.com/auth/presentations"
+  ],
   "exceptionLogging": "STACKDRIVER",
   "runtimeVersion": "V8",
   "webapp": {
     "executeAs": "USER_ACCESSING",
-    "access": "ANYONE"
+    "access": "DOMAIN"
   }
 }
