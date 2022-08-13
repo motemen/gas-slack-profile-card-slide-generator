@@ -83,14 +83,14 @@ const TemplateVariableExamplesDialog = ({ shown, onHide }: DialogProps) => {
       <Modal.Body>
         {examples ? (
           <Table striped bordered hover>
+            <thead>
+              <tr>
+                <th>Type</th>
+                <th>From</th>
+                <th>To</th>
+              </tr>
+            </thead>
             <tbody>
-              <thead>
-                <tr>
-                  <th>Type</th>
-                  <th>From</th>
-                  <th>To</th>
-                </tr>
-              </thead>
               {examples.map((ex, i) => (
                 <tr key={i}>
                   <td>{ex.type}</td>
