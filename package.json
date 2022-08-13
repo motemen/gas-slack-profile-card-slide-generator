@@ -21,6 +21,8 @@
     "vite-plugin-static-copy": "^0.7.0"
   },
   "scripts": {
+    "setup": "run-s setup:project build 'push -f'",
+    "setup:project": "clasp create --type webapp",
     "build": "run-p build:*",
     "build:server": "mkdir -p dist && cp src/server.ts dist/",
     "build:client": "vite build",
