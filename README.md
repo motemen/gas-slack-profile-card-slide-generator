@@ -13,6 +13,7 @@ Configuration
 
 Click `🔧Slack App Manifest` to obtain a manifest to create a new Slack app at https://api.slack.com/apps.
 
+|Name|Description|
 |--|--|
 |`SLACK_CLIENT_ID`|Slack app client ID|
 |`SLACK_CLIENT_SECRET`|Slack app client secret|
